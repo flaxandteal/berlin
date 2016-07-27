@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+
+import click
+
+@click.command()
+def run():
+    print("Wilkommen, bienvenue, welcome. Come on in!")
+
+
+if __name__ == '__main__':
+    run()
