@@ -18,11 +18,11 @@ class Locode(code.Code):
         super(Locode, self).__init__(*args, **kwargs)
 
         subdiv_code = self.get('subdivision_code')
-        if subdiv_code:
-            state_code = self.get('state')
-            self._subdiv = self._subdivision_service(state_code, subdiv_code)
-        else:
-            self._subdiv = None
+        state_code = self.get('state')
+        unit = self._subdivision_service(state_code, subdiv_code)
+
+        self._subdiv = unit if subdiv_code else None
+        self._state = unit if not subdiv_code else None
 
         self._definition = self._build_definition()
 
@@ -48,6 +48,16 @@ class Locode(code.Code):
             definition.append(name)
 
         if self._subdiv:
-            definition.append(self._subdiv.name)
+            definition.append(self._subdiv.definition())
 
         return ', '.join(definition)
+
+    def paragraph(self):
+        content = super(Locode, self).paragraph()
+
+        unit = self._subdiv if self._subdiv else self._state
+        if unit:
+            subcontent = unit.paragraph()
+            content += "\n".join(["    %s" % s for s in subcontent.split('\n')])
+
+        return content
