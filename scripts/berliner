@@ -2,6 +2,7 @@
 
 import click
 import sys
+import readline
 from berlin.backend_dict import BackendDict
 from berlin.commands import CommandHandler
 
@@ -31,15 +32,21 @@ def interactive(command=None):
         click.echo("> ", nl=False)
         handler.run(command)
     else:
+        readline.parse_and_bind('set editing-mode vi')
         line = ""
-        while line != "QUIT":
-            line = input("> ").strip().split(' ')
-            command, arguments = line[0], line[1:]
-            handler.run(command, *arguments)
+        while True:
+            line = input("> ").strip()
+            if line:
+                if line == 'QUITE':
+                    break
+                line = line.split(' ')
+                command, arguments = line[0], line[1:]
+                handler.run(command, *arguments)
             click.echo()
 
 def load():
     data_sources = {
+        'iata_file': 'data/locode/airports.dat',
         'state_file': 'data/locode/un-locode/data/country-codes.csv',
         'subdiv_file': 'data/locode/un-locode/data/subdivision-codes.csv',
         'locode_file': 'data/locode/un-locode/data/code-list-sdn.csv'

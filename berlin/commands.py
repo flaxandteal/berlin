@@ -8,32 +8,88 @@ class CommandHandler:
         self.state_dict = state_dict
         self.subdiv_dict = subdiv_dict
         self.locode_dict = locode_dict
+        self.combined_dict = subdiv_dict.copy()
+        self.combined_dict.update(locode_dict)
         self._printer = printer
         self._commands = {
             "CONSISTENCY": self.do_consistency,
+
             "QUERY": self.do_query,
             "Q": self.do_query,
+
+            "LQUERY": self.do_locode_query,
+            "R": self.do_locode_query,
+
+            "SDQUERY": self.do_subdivision_query,
+            "T": self.do_subdivision_query,
+
+            "LOCODE": self.do_locode,
+            "L": self.do_locode,
+
+            "SUBDIVISION": self.do_subdivision,
+            "D": self.do_subdivision,
+
+            "STATE": self.do_state,
+            "S": self.do_state,
+
+            "MATCH": self.do_match,
+            "M": self.do_match
         }
 
     def run(self, command, *args, **kwargs):
         self._commands[command](*args, **kwargs)
 
-    def do_query(self, *args):
+    def do_query(self, *args, **kwargs):
+        parser = multicode.RegionParser(self.combined_dict)
+        self._query_runner(parser, *args, **kwargs)
+
+    def do_locode_query(self, *args, **kwargs):
+        parser = multicode.RegionParser(self.locode_dict)
+        self._query_runner(parser, *args, **kwargs)
+
+    def do_subdivision_query(self, *args, **kwargs):
+        parser = multicode.RegionParser(self.subdiv_dict)
+        self._query_runner(parser, *args, **kwargs)
+
+    def _parse_to_components(self, args):
+        components = {'name': []}
+        this_component = 'name'
+        for arg in args:
+            if arg and arg[0] == '[' and arg[-1] == ']':
+                this_component = arg[1:-1]
+                components[this_component] = []
+            else:
+                components[this_component].append(arg)
+
+        return {k: ' '.join(v) for k, v in components.items()}
+
+    def _query_runner(self, parser, *args, **kwargs):
         if not args:
             self._printer("[MUST HAVE ARGUMENT]")
 
-        name = ' '.join(args)
+        try:
+            matches = int(args[0])
+            args = args[1:]
+        except ValueError:
+            matches = 1
 
-        parser = multicode.RegionParser(self.locode_dict)
-        code, lcde = parser.analyse(name=name)
+        components = self._parse_to_components(args)
+        self._printer(components)
+        lcdes = parser.analyse(matches=matches, **components)
 
-        if lcde:
-            content = "BEST MATCH(%s):\n" % code
-            subcontent = lcde.paragraph()
-            content += "\n".join(["    %s" % s for s in subcontent.split('\n')])
-            self._printer(content)
-        else:
-            self._printer("[NO MATCH]")
+        if matches == 1:
+            lcdes = [lcdes]
+
+        for code, lcde, score, log_steps in lcdes:
+            if lcde:
+                content = "MATCH(%s:%.3lf):\n" % (code, score)
+                content += "\n".join([':'.join(map(str, lg)) for lg in log_steps])
+                content += "\n"
+                subcontent = lcde.paragraph()
+                content += "\n".join(["    %s" % s for s in subcontent.split('\n')])
+                self._printer(content)
+            else:
+                self._printer("[NO MATCH]")
 
     def do_consistency(self):
         missing = {}
@@ -55,3 +111,37 @@ class CommandHandler:
         for ste, msg in missing.items():
             ste = self.state_dict[ste]
             self._printer("%s: %s" % (ste.name, ', '.join(['%s (%s)' % (k, ', '.join([w.name for w in v])) for k, v in msg.items()])))
+
+    def do_match(self, code, *args):
+        if code not in self.combined_dict:
+            self._printer("[NOT FOUND]")
+        else:
+            lcde = self.combined_dict[code]
+            components = self._parse_to_components(args)
+            parser = multicode.RegionParser(self.combined_dict)
+            self._printer(components)
+            score, log_steps = parser.match(lcde, **components)
+            content = "MATCH(%s:%.3lf):\n" % (code, score)
+            content += "\n".join([':'.join(map(str, lg)) for lg in log_steps])
+            self._printer(content)
+
+    def do_locode(self, code):
+        if code not in self.locode_dict:
+            self._printer("[NOT FOUND]")
+        else:
+            lcde = self.locode_dict[code]
+            self._printer(lcde.paragraph())
+
+    def do_subdivision(self, code):
+        if code not in self.subdiv_dict:
+            self._printer("[NOT FOUND]")
+        else:
+            subdiv = self.subdiv_dict[code]
+            self._printer(subdiv.paragraph())
+
+    def do_state(self, code):
+        if code not in self.state_dict:
+            self._printer("[NOT FOUND]")
+        else:
+            ste = self.state_dict[code]
+            self._printer(ste.paragraph())

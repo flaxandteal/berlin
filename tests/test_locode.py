@@ -26,7 +26,8 @@ def locode_dict():
             'supercode': 'DE',
             'subcode': 'BER',
             'subdivision_code': 'BE',
-            'state': 'DE'
+            'state': 'DE',
+            'function_code': '12345---'
         }
     }
 
@@ -59,3 +60,24 @@ class TestLocode:
 
         assert str(lcde) == key
         assert dict(lcde) == item
+
+    def test_can_get_locode_function(self, locode_dict, subdiv_dict):
+        key, item = list(locode_dict.items())[0]
+
+        subdiv_code = '%s:%s' % (item['state'], item['subdivision_code'])
+        subdiv_service = lambda st, sc: subdiv_dict[subdiv_code]
+        lcde = locode.Locode(subdiv_service, key, **item)
+
+        assert lcde.functions == ('1', '2', '3', '4', '5')
+        assert not lcde.function_not_known
+        assert lcde.has_port_function
+        assert lcde.has_rail_terminal_function
+        assert lcde.has_road_terminal_function
+        assert lcde.has_airport_function
+        assert lcde.has_postal_exchange_function
+        assert not lcde.has_multimodal_functions
+        assert not lcde.has_fixed_transport_function
+        assert not lcde.has_inland_port_function
+        assert not lcde.has_border_crossing
+
+        assert lcde.function_score == 4.5

@@ -14,7 +14,7 @@ class Code:
         self.identifier = identifier
         self._definition = identifier
         for field in self._fields:
-            if field in kwargs:
+            if field in kwargs and kwargs[field]:
                 setattr(self, field, kwargs[field])
 
     def __str__(self):
@@ -22,7 +22,9 @@ class Code:
 
     def __iter__(self):
         for field in self._fields:
-            yield field, self.get(field)
+            value = self.get(field)
+            if value:
+                yield field, self.get(field)
 
     def as_pair(self):
         """Returns a pair that can be used to build a code dictionary."""

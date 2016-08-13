@@ -12,6 +12,7 @@ class SubDivision(code.Code):
     """Rpresentation of ISO3166-2 subdivisions."""
 
     _fields = ('name', 'supercode', 'subcode', 'level', 'state')
+    function_score = 10
 
     def __init__(self, state_service, *args, **kwargs):
         self._state_service = state_service
@@ -59,6 +60,7 @@ class SubDivision(code.Code):
 
         if self._state:
             subcontent = self._state.paragraph()
+            content += "\n\n[State]\n"
             content += "\n".join(["    %s" % s for s in subcontent.split('\n')])
 
         return content

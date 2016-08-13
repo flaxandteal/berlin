@@ -9,13 +9,17 @@ from . import code
 
 
 class State(code.Code):
-    """Rpresentation of ISO3166-1 states."""
+    """Representation of ISO3166-1 states."""
 
     _fields = ('name', 'alpha2')
 
     def contains(self, lcde):
         """Check whether a locode lies in this region."""
         raise NotImplementedError()
+
+    def definition(self):
+        """Returns a definition-type string."""
+        return "%s, %s" % (self.get('name'), self.get('alpha2'))
 
     def describe(self):
         """Returns a more informative description of this state."""
