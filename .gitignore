@@ -3,3 +3,6 @@
 .eggs
 .cache
 __pycache__
+build
+dist
+*.pyc

@@ -1,10 +1,91 @@
 #!/usr/bin/env python3
 
 import click
+import pandas
+from berlin import multicode
+from berlin import state
+from berlin import subdivision
+from berlin import locode
 
 @click.command()
 def run():
     print("Wilkommen, bienvenue, welcome. Come on in!")
+
+    states = pandas.read_csv('data/locode/un-locode/data/country-codes.csv')
+    state_dict = {}
+    for index, ste in states.iterrows():
+        code = ste['CountryCode']
+        state_dict[code] = state.State(
+            code,
+            name=ste['CountryName'],
+            alpha2=ste['CountryCode']
+        )
+
+    def state_service(ste):
+        try:
+            ste = state_dict[ste]
+        except:
+            ste = None
+        return ste
+
+    subdivisions = pandas.read_csv('data/locode/un-locode/data/subdivision-codes.csv', dtype=str)
+    subdiv_dict = {}
+    for index, subdiv in subdivisions.iterrows():
+        code = '{}:{}'.format(subdiv['SUCountry'], subdiv['SUCode'])
+        subdiv_dict[code] = subdivision.SubDivision(
+            state_service,
+            code,
+            name=subdiv['SUName'],
+            supercode=subdiv['SUCountry'],
+            subcode=subdiv['SUCode'],
+            level='[UNKNOWN]'
+        )
+
+    def subdivision_service(ste, subdiv):
+        try:
+            subdiv = subdiv_dict['{}:{}'.format(ste, subdiv)]
+        except:
+            subdiv = None
+        return subdiv
+
+    locodes = pandas.read_csv('data/locode/un-locode/data/code-list-sdn.csv', dtype=str)
+    locode_dict = {}
+    for index, lcde in locodes.iterrows():
+        code = '{}:{}'.format(lcde['Country'], lcde['Location'])
+
+        if not pandas.isnull(lcde['SubdivisionFaT']):
+            subdivision_code = lcde['SubdivisionFaT']
+        else:
+            subdivision_code = None
+
+        locode_dict[code] = locode.Locode(
+            subdivision_service,
+            code,
+            name=lcde['Name'],
+            supercode=lcde['Country'],
+            subcode=lcde['Location'],
+            subdivision_code=subdivision_code,
+            state=lcde['Country']
+        )
+
+    missing = {}
+    for lcde in locode_dict.values():
+        if lcde._subdiv is None and lcde.subdivision_code is not None:
+            ste = lcde.supercode
+            if ste not in missing:
+                missing[ste] = {}
+            subdiv = lcde.subdivision_code
+            if subdiv not in missing[ste]:
+                missing[ste][subdiv] = []
+            missing[ste][subdiv].append(lcde)
+
+    for ste, msg in missing.items():
+        ste = state_service(ste)
+        print("%s: %s" % (ste.name, ', '.join(['%s (%s)' % (k, ', '.join([w.name for w in v])) for k, v in msg.items()])))
+
+    #parser = multicode.RegionParser(locode_dict)
+
+    #with parser.
 
 
 if __name__ == '__main__':
