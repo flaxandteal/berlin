@@ -12,7 +12,7 @@ class SubDivision(code.Code):
     """Rpresentation of ISO3166-2 subdivisions."""
 
     _fields = ('name', 'supercode', 'subcode', 'level', 'state')
-    function_score = 10
+    function_score = 0.6
 
     def __init__(self, state_service, *args, **kwargs):
         self._state_service = state_service

@@ -1,0 +1,12 @@
+Code,Test
+GB:LON,London
+US:DQB,Dublin California
+GB:BFS,Belfast
+AE:OFJ,Fujairah
+BA:BKO,Brcko
+LU:LUX,Luxembourg
+FM:TKK,Truk
+IT:LAQ,L'Aquila
+CH:BRN,Bern
+US:SJC,San Jose
+AT:VIE,Wien

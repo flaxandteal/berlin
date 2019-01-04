@@ -1,0 +1,6 @@
+LOCODE
+
+GL:SFJ - missing closing paren
+GL:FHN - missing closing paren
+BA:BKO - should this be in BA:BRC subdivision?
+FI:KAJ - appears twice (alt names reversed)

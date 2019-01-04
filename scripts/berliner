@@ -3,6 +3,7 @@
 import click
 import sys
 import readline
+import traceback
 from berlin.backend_dict import BackendDict
 from berlin.commands import CommandHandler
 
@@ -25,9 +26,9 @@ def consistency(self):
     interactive('CONSISTENCY')
 
 def interactive(command=None):
-    state_dict, subdiv_dict, locode_dict = load()
+    state_dict, subdiv_dict, locode_dict, locode_dict_by_state = load()
 
-    handler = CommandHandler(state_dict, subdiv_dict, locode_dict, printer=click.echo)
+    handler = CommandHandler(state_dict, subdiv_dict, locode_dict, locode_dict_by_state, printer=click.echo)
     if command:
         click.echo("> ", nl=False)
         handler.run(command)
@@ -41,14 +42,20 @@ def interactive(command=None):
                     break
                 line = line.split(' ')
                 command, arguments = line[0], line[1:]
-                handler.run(command, *arguments)
+                try:
+                    handler.run(command, *arguments)
+                except Exception as e:
+                    traceback.print_exc()
             click.echo()
 
 def load():
     data_sources = {
         'iata_file': 'data/locode/airports.dat',
-        'state_file': 'data/locode/un-locode/data/country-codes.csv',
-        'subdiv_file': 'data/locode/un-locode/data/subdivision-codes.csv',
+        'state_file': 'data/locode/country-codes/data/country-codes.csv',
+        'subdiv_file': [
+            'data/locode/un-locode/data/subdivision-codes.csv',
+            'data/locode/iso-3166-2/iso_3166_2.js',
+        ],
         'locode_file': 'data/locode/un-locode/data/code-list-sdn.csv'
     }
 

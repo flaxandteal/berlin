@@ -4,15 +4,21 @@ from berlin import subdivision
 from berlin import locode
 
 class CommandHandler:
-    def __init__(self, state_dict, subdiv_dict, locode_dict, printer):
+    def __init__(self, state_dict, subdiv_dict, locode_dict, locode_dict_by_state, printer=print):
         self.state_dict = state_dict
         self.subdiv_dict = subdiv_dict
         self.locode_dict = locode_dict
+        self._locode_parser = multicode.RegionParser(locode_dict)
+        self.locode_dict_by_state = locode_dict_by_state
         self.combined_dict = subdiv_dict.copy()
         self.combined_dict.update(locode_dict)
         self._printer = printer
         self._commands = {
             "CONSISTENCY": self.do_consistency,
+            "C": self.do_consistency,
+
+            "QUERYST": self.do_query_by_state,
+            "QS": self.do_query_by_state,
 
             "QUERY": self.do_query,
             "Q": self.do_query,
@@ -23,33 +29,89 @@ class CommandHandler:
             "SDQUERY": self.do_subdivision_query,
             "T": self.do_subdivision_query,
 
+            "STQUERY": self.do_state_query,
+            "U": self.do_state_query,
+
             "LOCODE": self.do_locode,
             "L": self.do_locode,
 
             "SUBDIVISION": self.do_subdivision,
-            "D": self.do_subdivision,
+            "B": self.do_subdivision,
 
             "STATE": self.do_state,
             "S": self.do_state,
 
             "MATCH": self.do_match,
-            "M": self.do_match
+            "M": self.do_match,
+
+            "HELP": self.do_help,
+            "?": self.do_help,
+
+            "POINT": self.do_point,
+            "P": self.do_point,
+
+            "DISTANCE": self.do_distance,
+            "D": self.do_distance
         }
 
     def run(self, command, *args, **kwargs):
         self._commands[command](*args, **kwargs)
 
+    def do_help(self, *args, **kwargs):
+        if args and args[0] in self._commands:
+            comm = args[0]
+            self._printer("%s\n%s" % (comm, self._commands[comm].__doc__))
+        else:
+            byfunc = {}
+            for name, func in self._commands.items():
+                if func.__name__ not in byfunc:
+                    byfunc[func.__name__] = []
+                byfunc[func.__name__].append(name)
+            self._printer("\n".join([" ".join(l) for l in sorted(byfunc.values(), key=len)]))
+
+    def do_query_by_state(self, ste, *args, **kwargs):
+        parser = multicode.RegionParser(self.locode_dict_by_state[ste], distances=False)
+        self._query_runner(parser, *args, **kwargs)
+
     def do_query(self, *args, **kwargs):
-        parser = multicode.RegionParser(self.combined_dict)
+        parser = multicode.RegionParser(self.combined_dict, distances=False)
         self._query_runner(parser, *args, **kwargs)
 
     def do_locode_query(self, *args, **kwargs):
-        parser = multicode.RegionParser(self.locode_dict)
+        self._query_runner(self._locode_parser, *args, **kwargs)
+
+    def do_state_query(self, *args, **kwargs):
+        parser = multicode.RegionParser(self.state_dict, distances=False)
         self._query_runner(parser, *args, **kwargs)
 
     def do_subdivision_query(self, *args, **kwargs):
-        parser = multicode.RegionParser(self.subdiv_dict)
+        parser = multicode.RegionParser(self.subdiv_dict, distances=False)
         self._query_runner(parser, *args, **kwargs)
+
+    def do_distance(self, code, x, y=None):
+        lcde1 = self.locode_dict[code]
+        if y:
+            distance = lcde1.distance(float(x), float(y))
+        else:
+            lcde2 = self.locode_dict[x]
+            if lcde2.coordinates:
+                distance = lcde1.distance(*lcde2.coordinates)
+            else:
+                distance = None
+
+        if distance is not None:
+            self._printer("%.4lf (in deg)" % distance)
+        else:
+            self._printer("[COULD NOT CALCULATE]")
+
+    def do_point(self, x, y, box_radius=None):
+        # 111 being about the ratio of Earth degrees to kilometers
+        lcde, distance = self._locode_parser.search(float(x), float(y), box_radius / 111., bool(box_radius))
+        if lcde:
+            self._printer("DISTANCE (deg): %.4lf" % distance)
+            self._printer(lcde.paragraph())
+        else:
+            self._printer("[NO NEARBY LOCODE]")
 
     def _parse_to_components(self, args):
         components = {'name': []}
@@ -113,12 +175,19 @@ class CommandHandler:
             self._printer("%s: %s" % (ste.name, ', '.join(['%s (%s)' % (k, ', '.join([w.name for w in v])) for k, v in msg.items()])))
 
     def do_match(self, code, *args):
-        if code not in self.combined_dict:
+        if code == '[ST]':
+            dictionary = self.state_dict
+            code = args[0]
+            args = args[1:]
+        else:
+            dictionary = self.combined_dict
+
+        if code not in dictionary:
             self._printer("[NOT FOUND]")
         else:
-            lcde = self.combined_dict[code]
+            lcde = dictionary[code]
             components = self._parse_to_components(args)
-            parser = multicode.RegionParser(self.combined_dict)
+            parser = multicode.RegionParser(dictionary, distances=False)
             self._printer(components)
             score, log_steps = parser.match(lcde, **components)
             content = "MATCH(%s:%.3lf):\n" % (code, score)

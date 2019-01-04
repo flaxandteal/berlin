@@ -6,6 +6,7 @@ This file contains a class for representing UN LOCODE subdivisions.
 """
 
 from . import code
+from math import sqrt
 
 _functions = {
     '0': {'property': 'function_not_known', 'description': 'Function not known, to be specified', 'score': -1},
@@ -23,7 +24,7 @@ _functions = {
 class Locode(code.Code):
     """Basic LOCODE representation type"""
 
-    _fields = ('name', 'supercode', 'subcode', 'subdivision_name', 'subdivision_code', 'state', 'function_code', 'iata_override', 'city')
+    _fields = ('name', 'supercode', 'subcode', 'subdivision_name', 'subdivision_code', 'function_code', 'iata_override', 'city')
 
     def __init__(self, iata_service, subdivision_service, *args, **kwargs):
         self._iata_service = iata_service
@@ -31,7 +32,7 @@ class Locode(code.Code):
         super(Locode, self).__init__(*args, **kwargs)
 
         subdiv_code = self.get('subdivision_code')
-        state_code = self.get('state')
+        state_code = self.get('supercode')
         unit = self._subdivision_service(state_code, subdiv_code)
 
         self._subdiv = unit if subdiv_code else None
@@ -52,20 +53,35 @@ class Locode(code.Code):
                 score += _functions[func]['score']
         self.function_score = score
 
+        self.iata = None
         iata_override = self.get('iata_override')
         if iata_override:
             self.iata_code = iata_override
-        else:
+        elif self.get('has_airport_function'):
             self.iata_code = self.get('subcode')
 
-        self.iata = self._iata_service(self.iata_code)
-        if self.iata:
-            self.city = self.iata.city
-        else:
-            self.iata_code = None
+            self.iata = self._iata_service(self.iata_code)
+            if self.iata:
+                self.city = self.iata.city
+            else:
+                self.iata_code = None
 
         if self._subdiv:
             self.subdivision_name = self._subdiv.name
+
+        if 'coordinates' in kwargs and kwargs['coordinates']:
+            self.coordinates = kwargs['coordinates']
+        else:
+            self.coordinates = None
+
+        # The design of code is such that the code's structure
+        # does not need to be known, so missing attributes
+        # are not assigned.
+
+        # However, some are essential for a type of code, to
+        # be assumed as existing. These must be explicitly added
+        if 'subdivision_code' not in kwargs:
+            self.subdivision_code = None
 
     def inside(self, subdiv):
         """Check whether this LOCODE is in a subdivision."""
@@ -93,8 +109,15 @@ class Locode(code.Code):
 
         return ', '.join(definition)
 
+    def distance(self, x, y):
+        if self.coordinates:
+            return sqrt((x - self.coordinates[0]) ** 2 + (y - self.coordinates[1]) ** 2)
+
     def paragraph(self):
         content = super(Locode, self).paragraph()
+
+        if self.coordinates:
+            content += "'\n{%.4lf, %.4lf}\n" % self.coordinates
 
         unit = self._subdiv if self._subdiv else self._state
         if unit:

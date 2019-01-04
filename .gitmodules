@@ -1,0 +1,9 @@
+[submodule "country-codes"]
+	path = country-codes
+	url = https://github.com/datasets/country-codes/
+[submodule "data/locode/country-codes"]
+	path = data/locode/country-codes
+	url = https://github.com/datasets/country-codes/
+[submodule "data/locode/iso-3166-2"]
+	path = data/locode/iso-3166-2
+	url = https://github.com/oodavid/iso-3166-2
