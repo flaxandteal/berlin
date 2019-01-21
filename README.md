@@ -32,6 +32,39 @@ Subdivisions in LOCODE list seem to be ISO3166-2:1998, not current ISO3166-2.
 
 # Use
 
+## Commands
+
+C - Returns inconstistancies in LOCODE data 
+``` C ```
+QS - search within a state - returns faster
+``` QS GB London```
+Q - search for a location - searches all LOCODES
+``` Q Belfast ```
+R - Search a locode to return information on that location
+``` R US NYC```
+T - Returns information on the subdivision of a location
+``` T Belfast```
+U - Searches for a state and returns its details
+``` U Austria```
+L - Searches for LOCODE and returns the location info
+``` L DE:BER```
+B - Searches for a subdivision
+``` B GB:BFS```
+S - Returns information for a state 
+``` S US```
+M - Finds a match
+```M GB:BFS Belfast Cardiff```
+? - Shows the list of commands
+``` ? ```
+P - Search for a location using x co-ordinate, y-co-ordinate, and radius in the parameters
+```  P 56.4 -4.6```
+D - Finds something at a distance?
+``` D US:NYC 1230 178```
+
+<hr>
+
+## Examples 
+
 ## Find a geographical location
 
 Input: 
