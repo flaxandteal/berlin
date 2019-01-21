@@ -13,6 +13,3 @@
 [submodule "data/locode/un-locode"]
 	path = data/locode/un-locode
 	url = https://github.com/flaxandteal/un-locode
-[submodule "tests/examples/data/locode/airport-codes"]
-	path = tests/examples/data/locode/airport-codes
-	url = https://github.com/datasets/airport-codes
