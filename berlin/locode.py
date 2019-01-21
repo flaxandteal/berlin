@@ -24,7 +24,7 @@ _functions = {
 class Locode(code.Code):
     """Basic LOCODE representation type"""
 
-    _fields = ('name', 'supercode', 'subcode', 'subdivision_name', 'subdivision_code', 'function_code', 'iata_override', 'city')
+    _fields = ('name', 'supercode', 'subcode', 'subdivision_name', 'subdivision_code', 'function_code', 'iata_override', 'city', 'coordinates')
 
     code_type = 'UN-LOCODE'
 
@@ -123,7 +123,7 @@ class Locode(code.Code):
         content = super(Locode, self).paragraph()
 
         if self.coordinates:
-            content += "'\n{%.4lf, %.4lf}\n" % self.coordinates
+            content += "'\n{%.4lf, %.4lf}\n" % tuple(self.coordinates)
 
         unit = self._subdiv if self._subdiv else self._state
         if unit:
