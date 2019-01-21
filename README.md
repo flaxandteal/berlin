@@ -34,13 +34,13 @@ Subdivisions in LOCODE list seem to be ISO3166-2:1998, not current ISO3166-2.
 
 ## Commands
 
-* *C* - Returns inconstistancies in LOCODE data 
+* *C* - Returns inconsistencies in LOCODE data 
 ** ``` C ```
 * *QS* - search within a state - returns faster
 ** ``` QS GB London```
 * *Q* - search for a location - searches all LOCODES
 ** ``` Q Belfast ```
-* *R* - Search a locode to return information on that location
+* *R* - Search a LOCODE to return information on that location
 ** ``` R US NYC```
 * *T* - Returns information on the subdivision of a location
 ** ``` T Belfast```
@@ -75,9 +75,9 @@ MATCH(GB:BEL:2.250):
 NAME MATCH:2.0:Belfast
 FUNCTION COEFFICIENT:0.25:2.5
     GB:BEL
-    [DEhgisawdxxaszs] <LOCODE [GB:BEL] for Belfast, Belfast, United Kingdom of Great Britain and Northern Ireland F2.5>
+    [DE] <LOCODE [GB:BEL] for Belfast, Belfast, United Kingdom of Great Britain and Northern Ireland F2.5>
     [DF] Belfast, Belfast, United Kingdom of Great Britain and Northern Ireland
-<br>    
+    <br>
     NAME: Belfast
     SUPERCODE: GB
     SUBCODE: BEL
@@ -85,25 +85,26 @@ FUNCTION COEFFICIENT:0.25:2.5
     SUBDIVISION_CODE: BFS
     FUNCTION_CODE: 1--4-6--
     IATA_OVERRIDE: BFS
-    ALTERNATIVE NAMES: [Belfast]
-    <br>  
+    COORDINATES: (54.983333333333334, -5.916666666666667)
+    ALTERNATIVE NAMES: [Belfast] [Belfast]'
+    {54.9833, -5.9167}
+    <br>
     [Subdivision]
-    <br>  
-    GB:BFS
+        GB:BFS
         [DE] <SubDivision [GB:BFS] for Belfast>
         [DF] Belfast, United Kingdom of Great Britain and Northern Ireland
-        <br>  
+        <br>
         NAME: Belfast
         SUPERCODE: GB
         SUBCODE: BFS
         LEVEL: district council area
         ALTERNATIVE NAMES: [Belfast]
-        <br>  
+        <br>
         [State]
             GB
             [DE] <State [GB] for United Kingdom of Great Britain and Northern Ireland>
             [DF] United Kingdom of Great Britain and Northern Ireland, GB-GBR
-            <br>  
+           <br> 
             NAME: United Kingdom of Great Britain and Northern Ireland
             SHORT: UK
             ALPHA2: GB
@@ -112,7 +113,7 @@ FUNCTION COEFFICIENT:0.25:2.5
             OFFICIAL_FR: Royaume-Uni de Grande-Bretagne et d'Irlande du Nord
             CONTINENT: EU
             ALTERNATIVE NAMES: [United Kingdom of Great Britain and Northern Ireland]
-    <br>  
+    <br>
     [Functions]
     Port, as defined in Rec 16
     Airport
