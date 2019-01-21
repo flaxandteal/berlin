@@ -5,7 +5,7 @@ This file contains a class for representing UN LOCODE subdivisions.
 
 """
 
-from . import code
+from . import code, subdivision, iata, state
 from math import sqrt
 
 _functions = {
@@ -26,14 +26,20 @@ class Locode(code.Code):
 
     _fields = ('name', 'supercode', 'subcode', 'subdivision_name', 'subdivision_code', 'function_code', 'iata_override', 'city')
 
-    def __init__(self, iata_service, subdivision_service, *args, **kwargs):
-        self._iata_service = iata_service
-        self._subdivision_service = subdivision_service
+    code_type = 'UN-LOCODE'
+
+    def __init__(self, *args, **kwargs):
         super(Locode, self).__init__(*args, **kwargs)
+
+        assert 'code_service' in kwargs
 
         subdiv_code = self.get('subdivision_code')
         state_code = self.get('supercode')
-        unit = self._subdivision_service(state_code, subdiv_code)
+
+        if subdiv_code:
+            unit = self._code_service('{}:{}'.format(state_code, subdiv_code), subdivision.SubDivision.code_type)
+        else:
+            unit = self._code_service(state_code, state.State.code_type)
 
         self._subdiv = unit if subdiv_code else None
         self._state = unit if not subdiv_code else None
@@ -60,7 +66,7 @@ class Locode(code.Code):
         elif self.get('has_airport_function'):
             self.iata_code = self.get('subcode')
 
-            self.iata = self._iata_service(self.iata_code)
+            self.iata = self._code_service(self.iata_code, iata.Iata.code_type)
             if self.iata:
                 self.city = self.iata.city
             else:

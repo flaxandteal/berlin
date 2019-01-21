@@ -13,6 +13,8 @@ class State(code.Code):
 
     _fields = ('name', 'short', 'alpha2', 'alpha3', 'official_en', 'official_fr', 'continent')
 
+    code_type = 'ISO-3166-1'
+
     def __init__(self, *args, **kwargs):
         super(State, self).__init__(*args, **kwargs)
         if not self.get('name'):

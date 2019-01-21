@@ -5,22 +5,24 @@ This module contains a class for representing UN LOCODE subdivisions.
 
 """
 
-from . import code
+from . import code, state
 
 
 class SubDivision(code.Code):
     """Rpresentation of ISO3166-2 subdivisions."""
 
     _fields = ('name', 'supercode', 'subcode', 'level', 'state')
+
     function_score = 0.6
 
-    def __init__(self, state_service, *args, **kwargs):
-        self._state_service = state_service
+    code_type = 'ISO-3166-2'
+
+    def __init__(self, *args, **kwargs):
         super(SubDivision, self).__init__(*args, **kwargs)
 
-        state = self.get('supercode')
+        ste = self.get('supercode')
         if state:
-            self._state = self._state_service(state)
+            self._state = self._code_service(ste, state.State.code_type)
         else:
             self._state = None
 

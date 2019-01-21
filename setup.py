@@ -7,7 +7,7 @@ with open('requirements.txt') as reqs:
 
     setup(
         name="Berlin",
-        version="0.1",
+        version="0.2",
         description="Tool to help analyse location statistics",
         scripts=['scripts/berliner'],
         packages=find_packages(),

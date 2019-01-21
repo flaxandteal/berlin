@@ -2,3 +2,6 @@ click
 pytest-runner
 fuzzywuzzy
 rtree
+pandas
+tqdm==4.24
+appdirs

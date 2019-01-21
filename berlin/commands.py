@@ -4,14 +4,8 @@ from berlin import subdivision
 from berlin import locode
 
 class CommandHandler:
-    def __init__(self, state_dict, subdiv_dict, locode_dict, locode_dict_by_state, printer=print):
-        self.state_dict = state_dict
-        self.subdiv_dict = subdiv_dict
-        self.locode_dict = locode_dict
-        self._locode_parser = multicode.RegionParser(locode_dict)
-        self.locode_dict_by_state = locode_dict_by_state
-        self.combined_dict = subdiv_dict.copy()
-        self.combined_dict.update(locode_dict)
+    def __init__(self, code_bank, printer=print):
+        self.code_bank = code_bank
         self._printer = printer
         self._commands = {
             "CONSISTENCY": self.do_consistency,
@@ -69,31 +63,35 @@ class CommandHandler:
                 byfunc[func.__name__].append(name)
             self._printer("\n".join([" ".join(l) for l in sorted(byfunc.values(), key=len)]))
 
+    def set_code_bank(self, code_bank):
+        self.code_bank = code_bank
+
     def do_query_by_state(self, ste, *args, **kwargs):
-        parser = multicode.RegionParser(self.locode_dict_by_state[ste], distances=False)
+        parser = self.code_bank.get_parser(locode.Locode.code_type, state=ste, distances=False)
         self._query_runner(parser, *args, **kwargs)
 
     def do_query(self, *args, **kwargs):
-        parser = multicode.RegionParser(self.combined_dict, distances=False)
+        parser = self.code_bank.get_parser(distances=False)
         self._query_runner(parser, *args, **kwargs)
 
     def do_locode_query(self, *args, **kwargs):
-        self._query_runner(self._locode_parser, *args, **kwargs)
+        parser = self.code_bank.get_parser(locode.Locode.code_type, distances=False)
+        self._query_runner(parser, *args, **kwargs)
 
     def do_state_query(self, *args, **kwargs):
-        parser = multicode.RegionParser(self.state_dict, distances=False)
+        parser = self.code_bank.get_parser(state.State.code_type, distances=False)
         self._query_runner(parser, *args, **kwargs)
 
     def do_subdivision_query(self, *args, **kwargs):
-        parser = multicode.RegionParser(self.subdiv_dict, distances=False)
+        parser = self.code_bank.get_parser(subdivision.SubDivision.code_type, distances=False)
         self._query_runner(parser, *args, **kwargs)
 
     def do_distance(self, code, x, y=None):
-        lcde1 = self.locode_dict[code]
+        lcde1 = self.code_bank.get(code, locode.Locode.code_type)
         if y:
             distance = lcde1.distance(float(x), float(y))
         else:
-            lcde2 = self.locode_dict[x]
+            lcde2 = self.code_bank.get(x, locode.Locode.code_type)
             if lcde2.coordinates:
                 distance = lcde1.distance(*lcde2.coordinates)
             else:
@@ -106,7 +104,8 @@ class CommandHandler:
 
     def do_point(self, x, y, box_radius=None):
         # 111 being about the ratio of Earth degrees to kilometers
-        lcde, distance = self._locode_parser.search(float(x), float(y), box_radius / 111., bool(box_radius))
+        parser = self.code_bank.get_parser(locode.Locode.code_type)
+        lcde, distance = parser.search(float(x), float(y), float(box_radius) / 111. if box_radius else None, bool(box_radius))
         if lcde:
             self._printer("DISTANCE (deg): %.4lf" % distance)
             self._printer(lcde.paragraph())
@@ -155,7 +154,7 @@ class CommandHandler:
 
     def do_consistency(self):
         missing = {}
-        for lcde in self.locode_dict.values():
+        for lcde in self.code_bank.get_values(locode.Locode.code_type):
             if lcde._subdiv is None and lcde.subdivision_code is not None:
                 ste = lcde.supercode
                 if ste not in missing:
@@ -171,23 +170,22 @@ class CommandHandler:
             self._printer("CONSISTENT")
 
         for ste, msg in missing.items():
-            ste = self.state_dict[ste]
+            ste = self.code_bank.get(ste, state.State.code_type)
             self._printer("%s: %s" % (ste.name, ', '.join(['%s (%s)' % (k, ', '.join([w.name for w in v])) for k, v in msg.items()])))
 
     def do_match(self, code, *args):
+        code_type = None
         if code == '[ST]':
-            dictionary = self.state_dict
+            code_type = state.State.code_type
             code = args[0]
             args = args[1:]
-        else:
-            dictionary = self.combined_dict
 
-        if code not in dictionary:
+        lcde = self.code_bank.sget(code, code_type)
+        if not lcde:
             self._printer("[NOT FOUND]")
         else:
-            lcde = dictionary[code]
             components = self._parse_to_components(args)
-            parser = multicode.RegionParser(dictionary, distances=False)
+            parser = self.code_bank.get_parser(code_type, distances=False)
             self._printer(components)
             score, log_steps = parser.match(lcde, **components)
             content = "MATCH(%s:%.3lf):\n" % (code, score)
@@ -195,22 +193,22 @@ class CommandHandler:
             self._printer(content)
 
     def do_locode(self, code):
-        if code not in self.locode_dict:
+        lcde = self.code_bank.sget(code, locode.Locode.code_type)
+        if not lcde:
             self._printer("[NOT FOUND]")
         else:
-            lcde = self.locode_dict[code]
             self._printer(lcde.paragraph())
 
     def do_subdivision(self, code):
-        if code not in self.subdiv_dict:
+        subdiv = self.code_bank.sget(code, subdivision.SubDivision.code_type)
+        if not subdiv:
             self._printer("[NOT FOUND]")
         else:
-            subdiv = self.subdiv_dict[code]
             self._printer(subdiv.paragraph())
 
     def do_state(self, code):
-        if code not in self.state_dict:
+        ste = self.code_bank.sget(code, state.State.code_type)
+        if not ste:
             self._printer("[NOT FOUND]")
         else:
-            ste = self.state_dict[code]
             self._printer(ste.paragraph())

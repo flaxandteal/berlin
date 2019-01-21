@@ -1,7 +1,7 @@
 # -*- ocding: utf-8 -*-
 """Handling IATA airport data.
 
-With thanks to the openflights database!
+With thanks to the ourairports.com
 
 """
 
@@ -9,9 +9,12 @@ from . import code
 
 
 class Iata(code.Code):
-    """Representation of ISO3166-1 states."""
+    """Representation of airports."""
 
-    _fields = ('name', 'city', 'country', 'iata', 'icao', 'y', 'x', 'elevation', 'timezone', 'dst', 'tz_id')
+    _fields = ('name', 'type', 'city', 'country', 'region', 'iata', 'y', 'x', 'elevation')
+    _intrinsic_fields = ('city',)
+
+    code_type = 'IATA'
 
     def definition(self):
         """Returns a definition-type string."""
