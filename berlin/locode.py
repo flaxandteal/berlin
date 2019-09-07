@@ -24,7 +24,7 @@ _functions = {
 class Locode(code.Code):
     """Basic LOCODE representation type"""
 
-    _fields = ('name', 'supercode', 'subcode', 'subdivision_name', 'subdivision_code', 'function_code', 'iata_override', 'city', 'coordinates')
+    _fields = ('name', 'supercode', 'subcode', 'subdivision_name', 'subdivision_code', 'function_code', 'iata_override', 'city')
 
     code_type = 'UN-LOCODE'
 
@@ -76,9 +76,9 @@ class Locode(code.Code):
             self.subdivision_name = self._subdiv.name
 
         if 'coordinates' in kwargs and kwargs['coordinates']:
-            self.coordinates = kwargs['coordinates']
+            self._fixed_coordinates = kwargs['coordinates']
         else:
-            self.coordinates = None
+            self._fixed_coordinates = None
 
         # The design of code is such that the code's structure
         # does not need to be known, so missing attributes
@@ -119,11 +119,11 @@ class Locode(code.Code):
         if self.coordinates:
             return sqrt((x - self.coordinates[0]) ** 2 + (y - self.coordinates[1]) ** 2)
 
+    def get_subdivision(self):
+        return self._subdiv
+
     def paragraph(self):
         content = super(Locode, self).paragraph()
-
-        if self.coordinates:
-            content += "'\n{%.4lf, %.4lf}\n" % tuple(self.coordinates)
 
         unit = self._subdiv if self._subdiv else self._state
         if unit:

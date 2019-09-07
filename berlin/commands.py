@@ -44,6 +44,9 @@ class CommandHandler:
             "POINT": self.do_point,
             "P": self.do_point,
 
+            "SDPOINT": lambda x, y, box_radius=None: self.do_point(x, y, box_radius, True),
+            "O": lambda x, y, box_radius=None: self.do_point(x, y, box_radius, True),
+
             "DISTANCE": self.do_distance,
             "D": self.do_distance
         }
@@ -108,14 +111,28 @@ class CommandHandler:
 
         return distance
 
-    def do_point(self, x, y, box_radius=None):
+    def do_point(self, x, y, box_radius=None, subdivisions=False):
         # 111 being about the ratio of Earth degrees to kilometers
-        parser = self.code_bank.get_parser(locode.Locode.code_type)
-        lcde, distance = parser.search(float(x), float(y), float(box_radius) / 111. if box_radius else None, bool(box_radius))
-        if lcde:
-            self._printer("DISTANCE (deg): %.4lf" % distance)
-            self._printer(lcde.paragraph())
+        if subdivisions:
+            parser = self.code_bank.get_parser(subdivision.SubDivision.code_type)
         else:
+            parser = self.code_bank.get_parser(locode.Locode.code_type)
+
+        nearest_only = not bool(box_radius)
+        results = parser.search(float(x), float(y), float(box_radius) / 111. if box_radius else None, nearest_only)
+
+        if nearest_only:
+            results = [results]
+
+        lcde = None
+        for result in results:
+            lcde, distance = result
+
+            if lcde:
+                self._printer("DISTANCE (deg): %.4lf" % distance)
+                self._printer(lcde.paragraph())
+
+        if not lcde:
             self._printer("[NO NEARBY LOCODE]")
 
         return lcde
@@ -216,12 +233,17 @@ class CommandHandler:
 
         return lcde
 
-    def do_subdivision(self, code):
+    def do_subdivision(self, code, children=False):
         subdiv = self.code_bank.sget(code, subdivision.SubDivision.code_type)
         if not subdiv:
             self._printer("[NOT FOUND]")
         else:
             self._printer(subdiv.paragraph())
+
+            if children:
+                self._printer("\n\n[CHILDREN]\n")
+                for child in subdiv.get_children():
+                    self._printer(child.describe())
 
         return subdiv
 

@@ -71,6 +71,11 @@ class CodeBankIO:
             locode_dict = json.load(f, cls=CodeDecoder)
             code_bank.add_dict(Locode.code_type, locode_dict)
 
+        for code, lcde in locode_dict.items():
+            subdiv = lcde.get_subdivision()
+            if subdiv:
+                subdiv.add_child(locode_dict[code])
+
         locode_dict_by_state = {}
         for lcde, code in locode_dict.items():
             if code.supercode not in locode_dict_by_state:

@@ -14,8 +14,9 @@ class Code:
 
     _fields = ()
     _intrinsic_fields = ()
+    _fixed_coordinates = None
+    _barycentre = None
     function_score = 0
-    coordinates = None
     code_type = None
 
     @classmethod
@@ -25,6 +26,7 @@ class Code:
     def __init__(self, identifier, **kwargs):
         self.identifier = identifier
         self._definition = identifier
+        self._children = []
 
         if 'code_service' in kwargs:
             self._code_service = kwargs['code_service']
@@ -61,6 +63,15 @@ class Code:
             value = self.get(field)
             if value:
                 yield field, self.get(field)
+
+    def get_children(self):
+        return self._children
+
+    def add_child(self, code):
+        self._children.append(code)
+
+        if code.coordinates:
+            self._barycentre = None
 
     def name_score(self, test_name):
         """Get a score for the matching of a name."""
@@ -107,6 +118,9 @@ class Code:
 
         content += "\nALTERNATIVE NAMES: [%s]" % "] [".join(self.alternative_names)
 
+        if self.coordinates:
+            content += "'\n{%.4lf, %.4lf}\n" % tuple(self.coordinates)
+
         return content
 
     def to_json(self):
@@ -124,3 +138,17 @@ class Code:
         if 'code_service':
             kw['code_service'] = code_service
         return cls(jsn['i'], **kw)
+
+    @property
+    def coordinates(self):
+        if self._fixed_coordinates:
+            return self._fixed_coordinates
+
+        if not self._barycentre:
+            child_coords = [child.coordinates for child in self._children if child.coordinates]
+            if child_coords:
+                x = sum([cc[0] for cc in child_coords]) / len(child_coords)
+                y = sum([cc[1] for cc in child_coords]) / len(child_coords)
+                self._barycentre = (x, y)
+
+        return self._barycentre
