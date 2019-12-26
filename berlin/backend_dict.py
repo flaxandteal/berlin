@@ -132,7 +132,7 @@ class BackendDict:
 
             ste = subdiv_dict[code].get_state()
             if ste:
-                ste.add_child(ste)
+                ste.add_child(subdiv_dict[code])
 
 
         #subdivisions = pandas.read_csv(subdiv_file, dtype=str)
