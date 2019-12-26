@@ -8,7 +8,11 @@ Parser to turn input data into sets of LOCODEs
 from fuzzywuzzy import fuzz
 import heapq
 from math import sqrt
-from rtree import index as rtree_index
+
+try:
+    from rtree import index as rtree_index
+except ImportError:
+    rtree_index = None
 
 class RegionParser:
     """Matches locations to a series of LOCODEs"""
@@ -28,11 +32,16 @@ class RegionParser:
     def __init__(self, locode_dict, distances=True, distance_threshold=0.25):
         self._locode_dict = locode_dict
         self._locode_dict_by_name = {v.name: v for k, v in locode_dict.items()}
-        self._locode_rtree = rtree_index.Index()
+
+        if rtree_index:
+            self._locode_rtree = rtree_index.Index()
+        else:
+            self._locode_rtree = None
+
         self._locode_rtree_index = 0
         self._distance_threshold = distance_threshold
 
-        if distances:
+        if distances and self._locode_rtree:
             for k, v in locode_dict.items():
                 if v.coordinates:
                     x, y = v.coordinates
@@ -42,6 +51,9 @@ class RegionParser:
     def search(self, x, y, box_radius=None, nearest_only=True):
         if not box_radius:
             box_radius = self._distance_threshold
+
+        if self._locode_rtree is None:
+            raise RuntimeError("To use distance searching, RTree must be available.")
 
         if nearest_only:
             nearest_codes = self._locode_rtree.nearest((x, y, x, y), 1, objects=True)
