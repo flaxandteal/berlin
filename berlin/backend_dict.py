@@ -130,6 +130,11 @@ class BackendDict:
                 level='[UNKNOWN]'
             )
 
+            ste = subdiv_dict[code].get_state()
+            if ste:
+                ste.add_child(ste)
+
+
         #subdivisions = pandas.read_csv(subdiv_file, dtype=str)
         #subdivisions = subdivisions.where(pandas.notnull(subdivisions), None)
         if progress_bar:

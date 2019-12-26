@@ -2,14 +2,20 @@ from berlin import multicode
 from berlin import state
 from berlin import subdivision
 from berlin import locode
+from berlin import network
 
 class CommandHandler:
+    net = None
+
     def __init__(self, code_bank, printer=print):
         self.code_bank = code_bank
         self._printer = printer
         self._commands = {
             "CONSISTENCY": self.do_consistency,
             "C": self.do_consistency,
+
+            "NETWORK": self.do_network,
+            "N": self.do_network,
 
             "QUERYST": self.do_query_by_state,
             "QS": self.do_query_by_state,
@@ -72,6 +78,16 @@ class CommandHandler:
 
     def set_code_bank(self, code_bank):
         self.code_bank = code_bank
+
+    def do_network(self, code, max_weight):
+        net = self.net
+        if not net:
+            net = network.LocodeNetwork(self.code_bank)
+            net.build()
+            self.net = net
+
+        result = net.within(code, float(max_weight))
+        self._printer(str(result))
 
     def do_query_by_state(self, ste, *args, **kwargs):
         parser = self.code_bank.get_parser(locode.Locode.code_type, state=ste, distances=False)

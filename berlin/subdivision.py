@@ -59,6 +59,9 @@ class SubDivision(code.Code):
 
         return ', '.join(definition)
 
+    def get_state(self):
+        return self._state
+
     def paragraph(self):
         content = super(SubDivision, self).paragraph()
 
@@ -66,7 +69,5 @@ class SubDivision(code.Code):
             subcontent = self._state.paragraph()
             content += "\n\n[State]\n"
             content += "\n".join(["    %s" % s for s in subcontent.split('\n')])
-
-        content += f"\n\n[Children: {len(self._children)}]\n"
 
         return content

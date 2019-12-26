@@ -6,7 +6,6 @@ This file contains a class for representing UN LOCODE subdivisions.
 """
 
 from . import code, subdivision, iata, state
-from math import sqrt
 
 _functions = {
     '0': {'property': 'function_not_known', 'description': 'Function not known, to be specified', 'score': -1},
@@ -115,9 +114,8 @@ class Locode(code.Code):
 
         return ', '.join(definition)
 
-    def distance(self, x, y):
-        if self.coordinates:
-            return sqrt((x - self.coordinates[0]) ** 2 + (y - self.coordinates[1]) ** 2)
+    def get_state(self):
+        return self._state
 
     def get_subdivision(self):
         return self._subdiv

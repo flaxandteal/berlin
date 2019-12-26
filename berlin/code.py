@@ -8,6 +8,9 @@ This file contains a class for representing UN LOCODE related types.
 from fuzzywuzzy import fuzz
 import re
 
+# Should be great circle (esp if not small)
+from math import sqrt
+
 
 class Code:
     """Basic representation of codes"""
@@ -108,6 +111,10 @@ class Code:
         """Returns a definition-type string."""
         return self._definition
 
+    def distance(self, x, y):
+        if self.coordinates:
+            return sqrt((x - self.coordinates[0]) ** 2 + (y - self.coordinates[1]) ** 2)
+
     def paragraph(self):
         """Print a paragraph version of information about this code."""
         content = "%s\n[DE] %s\n[DF] %s\n" % (str(self), self.describe(), self.definition())
@@ -120,6 +127,9 @@ class Code:
 
         if self.coordinates:
             content += "'\n{%.4lf, %.4lf}\n" % tuple(self.coordinates)
+
+        if self._children:
+            content += f"\n[Children: {len(self._children)}]\n"
 
         return content
 
