@@ -28,7 +28,7 @@ class Locode(code.Code):
     code_type = 'UN-LOCODE'
 
     def __init__(self, *args, **kwargs):
-        super(Locode, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         assert 'code_service' in kwargs
 

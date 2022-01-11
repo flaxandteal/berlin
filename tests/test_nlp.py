@@ -39,8 +39,8 @@ def subdivision_dict(state_dict):
         }
     }
 
-    state_service = lambda st: state_dict[st]
-    return {k: subdivision.SubDivision(state_service, k, **v) for k, v in subdiv_dict.items()}
+    state_service = lambda st, _: state_dict[st]
+    return {k: subdivision.SubDivision(k, code_service=state_service, **v) for k, v in subdiv_dict.items()}
 
 @pytest.fixture
 def locode_dict(subdivision_dict):
@@ -61,8 +61,8 @@ def locode_dict(subdivision_dict):
         }
     }
 
-    ss = lambda st, sc: subdivision_dict['%s:%s' % (st, sc)]
-    return {k: locode.Locode(ss, k, **v) for k, v in flat_dict.items()}
+    ss = lambda st, sc: subdivision_dict[st]
+    return {k: locode.Locode(k, code_service=ss, **v) for k, v in flat_dict.items()}
 
 
 class TestNLP:
@@ -71,4 +71,4 @@ class TestNLP:
         anhee = locode_dict['BE:ANH']
         locode = parser.analyse(name='Anhee')
 
-        assert locode == ('BE:ANH', anhee)
+        assert locode == ('BE:ANH', anhee, 2.0, [('NAME MATCH', 2.0, 'Anhee'), ('FUNCTION COEFFICIENT', 0.0, 0)])

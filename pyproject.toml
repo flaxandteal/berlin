@@ -20,6 +20,7 @@ appdirs = "^1.4.4"
 setuptools = "^60.5.0"
 
 [tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
 
 [tool.poetry.scripts]
 berliner = "berlin.scripts.berliner:cli"

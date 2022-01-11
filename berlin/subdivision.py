@@ -20,7 +20,7 @@ class SubDivision(code.Code):
     _barycentre = None
 
     def __init__(self, *args, **kwargs):
-        super(SubDivision, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         ste = self.get('supercode')
         if state:

@@ -39,8 +39,8 @@ def subdivision_dict(state_dict):
         }
     }
 
-    state_service = lambda st: state_dict[st]
-    return {k: subdivision.SubDivision(state_service, k, **v) for k, v in subdiv_dict.items()}
+    state_service = lambda st, _: state_dict[st]
+    return {k: subdivision.SubDivision(k, code_service=state_service, **v) for k, v in subdiv_dict.items()}
 
 @pytest.fixture
 def locode_dict(subdivision_dict):
@@ -63,42 +63,35 @@ def locode_dict(subdivision_dict):
         }
     }
 
-    ss = lambda st, sc: subdivision_dict['%s:%s' % (st, sc)]
-    return {k: locode.Locode(ss, k, **v) for k, v in flat_dict.items()}
+    ss = lambda st, sc: subdivision_dict[st] if sc == 'ISO-3166-2' else None
+    return {k: locode.Locode(k, code_service=ss, **v) for k, v in flat_dict.items()}
 
 
 class TestMulticode:
     def test_can_parse_direct_name_match(self, locode_dict):
         parser = multicode.RegionParser(locode_dict)
         anhee = locode_dict['BE:ANH']
-        code, locode, score = parser.analyse(name='Anhee')
-
-        assert (code, locode) == ('BE:ANH', anhee)
-
-    def test_can_parse_rotated_name_match(self, locode_dict):
-        parser = multicode.RegionParser(locode_dict)
-        anhee = locode_dict['BE:ANH']
-        code, locode, score = parser.analyse(state='Anhee')
+        code, locode, score, matches = parser.analyse(name='Anhee')
 
         assert (code, locode) == ('BE:ANH', anhee)
 
     def test_can_spot_similar_names(self, locode_dict):
         parser = multicode.RegionParser(locode_dict)
         antwerp = locode_dict['BE:ANT']
-        code, locode, score = parser.analyse(name='Antwerp')
+        code, locode, score, matches = parser.analyse(name='Antwerp')
 
         assert (code, locode) == ('BE:ANT', antwerp)
 
     def test_can_spot_similar_names_with_diacritics(self, locode_dict):
         parser = multicode.RegionParser(locode_dict)
         anhee = locode_dict['BE:ANH']
-        code, locode, score = parser.analyse(name='Anhée')
+        code, locode, score, matches = parser.analyse(name='Anhée')
 
         assert (code, locode) == ('BE:ANH', anhee)
 
     def test_prefers_function_score(self, locode_dict):
         parser = multicode.RegionParser(locode_dict)
         antwerp = locode_dict['BE:ANT']
-        code, locode, score = parser.analyse(state='BE')
+        code, locode, score, matches = parser.analyse(state='BE')
 
         assert (code, locode) == ('BE:ANT', antwerp)

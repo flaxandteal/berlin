@@ -14,7 +14,7 @@ class State(code.Code):
     _fields = ('name', 'short', 'alpha2', 'official_en', 'official_fr', 'continent')
 
     def __init__(self, *args, **kwargs):
-        super(State, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not self.get('name'):
             self.name = self.get('short')
 
