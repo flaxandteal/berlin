@@ -21,6 +21,7 @@ setuptools = "^60.5.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
+mypy = "^0.931"
 
 [tool.poetry.scripts]
 berliner = "berlin.scripts.berliner:cli"
