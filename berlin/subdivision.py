@@ -9,16 +9,18 @@ from . import code, state
 
 
 class SubDivision(code.Code):
-    """Rpresentation of ISO3166-2 subdivisions."""
+    """Representation of ISO3166-2 subdivisions."""
 
     _fields = ('name', 'supercode', 'subcode', 'level', 'state')
 
     function_score = 0.6
 
     code_type = 'ISO-3166-2'
+    _fixed_coordinates = None
+    _barycentre = None
 
     def __init__(self, *args, **kwargs):
-        super(SubDivision, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         ste = self.get('supercode')
         if state:
@@ -30,7 +32,7 @@ class SubDivision(code.Code):
 
     def contains(self, lcde):
         """Check whether a locode lies in this region."""
-        raise NotImplementedError()
+        return any([l.identifier == lcde.identifier for l in self._children])
 
     def intersects(self, subdiv):
         """Check whether a subdivision intersects another."""
@@ -56,6 +58,9 @@ class SubDivision(code.Code):
             definition.append(self._state.name)
 
         return ', '.join(definition)
+
+    def get_state(self):
+        return self._state
 
     def paragraph(self):
         content = super(SubDivision, self).paragraph()

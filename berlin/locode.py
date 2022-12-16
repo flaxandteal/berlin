@@ -6,7 +6,6 @@ This file contains a class for representing UN LOCODE subdivisions.
 """
 
 from . import code, subdivision, iata, state
-from math import sqrt
 
 _functions = {
     '0': {'property': 'function_not_known', 'description': 'Function not known, to be specified', 'score': -1},
@@ -29,7 +28,7 @@ class Locode(code.Code):
     code_type = 'UN-LOCODE'
 
     def __init__(self, *args, **kwargs):
-        super(Locode, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         assert 'code_service' in kwargs
 
@@ -76,9 +75,9 @@ class Locode(code.Code):
             self.subdivision_name = self._subdiv.name
 
         if 'coordinates' in kwargs and kwargs['coordinates']:
-            self.coordinates = kwargs['coordinates']
+            self._fixed_coordinates = kwargs['coordinates']
         else:
-            self.coordinates = None
+            self._fixed_coordinates = None
 
         # The design of code is such that the code's structure
         # does not need to be known, so missing attributes
@@ -115,15 +114,14 @@ class Locode(code.Code):
 
         return ', '.join(definition)
 
-    def distance(self, x, y):
-        if self.coordinates:
-            return sqrt((x - self.coordinates[0]) ** 2 + (y - self.coordinates[1]) ** 2)
+    def get_state(self):
+        return self._state
+
+    def get_subdivision(self):
+        return self._subdiv
 
     def paragraph(self):
         content = super(Locode, self).paragraph()
-
-        if self.coordinates:
-            content += "'\n{%.4lf, %.4lf}\n" % self.coordinates
 
         unit = self._subdiv if self._subdiv else self._state
         if unit:

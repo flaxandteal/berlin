@@ -2,6 +2,22 @@
 
 Berlin is a library that can be used for referencing international geographic locations. UN/LOCODE (United nations Code for Trade & Transport Locations) is used to return location information based on matches generated from the place name input. See below for examples.
 
+## Quickstart
+
+Install `poetry`, then use:
+
+    poetry install
+
+To run, use:
+
+    poetry run berliner
+
+Once the LOCODEs have loaded, queries such as:
+
+    QUERYST GB londin
+
+Should be able to find a location.
+
 ## License
 
 AGPLv3 in LICENSE file.
@@ -352,5 +368,3 @@ FUNCTION COEFFICIENT:0.25:2.5
     Multimodal Functions (ICDs, etc.)
 </code></pre>
 <br>  
-
-

@@ -26,6 +26,7 @@ def locode_dict():
             'supercode': 'DE',
             'subcode': 'BER',
             'subdivision_code': 'BE',
+            'subdivision_name': 'Berlin',
             'state': 'DE',
             'function_code': '12345---'
         }
@@ -43,8 +44,8 @@ def subdiv_dict(state_dict):
         }
     }
 
-    state_service = lambda st: state_dict[st]
-    subdiv_dict = {c: subdivision.SubDivision(state_service, c, **v) for c, v in subdiv_dict.items()}
+    state_service = lambda st, _: state_dict[st]
+    subdiv_dict = {c: subdivision.SubDivision(c, code_service=state_service, **v) for c, v in subdiv_dict.items()}
 
     return subdiv_dict
 
@@ -55,18 +56,19 @@ class TestLocode:
         key, item = list(locode_dict.items())[0]
 
         subdiv_code = '%s:%s' % (item['state'], item['subdivision_code'])
-        subdiv_service = lambda st, sc: subdiv_dict[subdiv_code]
-        lcde = locode.Locode(subdiv_service, key, **item)
+        subdiv_service = lambda st, sc: subdiv_dict[subdiv_code] if sc == 'ISO-3166-2' else None
+        lcde = locode.Locode(key, code_service=subdiv_service, **item)
 
         assert str(lcde) == key
+        del item['state']
         assert dict(lcde) == item
 
     def test_can_get_locode_function(self, locode_dict, subdiv_dict):
         key, item = list(locode_dict.items())[0]
 
         subdiv_code = '%s:%s' % (item['state'], item['subdivision_code'])
-        subdiv_service = lambda st, sc: subdiv_dict[subdiv_code]
-        lcde = locode.Locode(subdiv_service, key, **item)
+        subdiv_service = lambda st, sc: subdiv_dict[subdiv_code] if sc == 'ISO-3166-2' else None
+        lcde = locode.Locode(key, code_service=subdiv_service, **item)
 
         assert lcde.functions == ('1', '2', '3', '4', '5')
         assert not lcde.function_not_known

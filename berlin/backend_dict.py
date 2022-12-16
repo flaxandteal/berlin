@@ -130,6 +130,11 @@ class BackendDict:
                 level='[UNKNOWN]'
             )
 
+            ste = subdiv_dict[code].get_state()
+            if ste:
+                ste.add_child(subdiv_dict[code])
+
+
         #subdivisions = pandas.read_csv(subdiv_file, dtype=str)
         #subdivisions = subdivisions.where(pandas.notnull(subdivisions), None)
         if progress_bar:
@@ -228,5 +233,9 @@ class BackendDict:
                 alternative_names=alternative_names
             )
             locode_dict_by_state[lcde['Country']][code] = locode_dict[code]
+
+            subdiv = locode_dict[code].get_subdivision()
+            if subdiv:
+                subdiv.add_child(locode_dict[code])
 
         return state_dict, subdiv_dict, locode_dict, locode_dict_by_state, iata_dict

@@ -2,14 +2,20 @@ from berlin import multicode
 from berlin import state
 from berlin import subdivision
 from berlin import locode
+from berlin import network
 
 class CommandHandler:
+    net = None
+
     def __init__(self, code_bank, printer=print):
         self.code_bank = code_bank
         self._printer = printer
         self._commands = {
             "CONSISTENCY": self.do_consistency,
             "C": self.do_consistency,
+
+            "NETWORK": self.do_network,
+            "N": self.do_network,
 
             "QUERYST": self.do_query_by_state,
             "QS": self.do_query_by_state,
@@ -44,17 +50,22 @@ class CommandHandler:
             "POINT": self.do_point,
             "P": self.do_point,
 
+            "SDPOINT": lambda x, y, box_radius=None: self.do_point(x, y, box_radius, True),
+            "O": lambda x, y, box_radius=None: self.do_point(x, y, box_radius, True),
+
             "DISTANCE": self.do_distance,
             "D": self.do_distance
         }
 
     def run(self, command, *args, **kwargs):
-        self._commands[command](*args, **kwargs)
+        return self._commands[command](*args, **kwargs)
 
     def do_help(self, *args, **kwargs):
         if args and args[0] in self._commands:
             comm = args[0]
-            self._printer("%s\n%s" % (comm, self._commands[comm].__doc__))
+            doc = self._commands[comm].__doc__
+            self._printer("%s\n%s" % (comm, doc))
+            byfunc = {comm: doc}
         else:
             byfunc = {}
             for name, func in self._commands.items():
@@ -63,28 +74,40 @@ class CommandHandler:
                 byfunc[func.__name__].append(name)
             self._printer("\n".join([" ".join(l) for l in sorted(byfunc.values(), key=len)]))
 
+        return byfunc
+
     def set_code_bank(self, code_bank):
         self.code_bank = code_bank
 
+    def do_network(self, code, max_weight):
+        net = self.net
+        if not net:
+            net = network.LocodeNetwork(self.code_bank)
+            net.build()
+            self.net = net
+
+        result = net.within(code, float(max_weight))
+        self._printer(str(result))
+
     def do_query_by_state(self, ste, *args, **kwargs):
         parser = self.code_bank.get_parser(locode.Locode.code_type, state=ste, distances=False)
-        self._query_runner(parser, *args, **kwargs)
+        return self._query_runner(parser, *args, **kwargs)
 
     def do_query(self, *args, **kwargs):
         parser = self.code_bank.get_parser(distances=False)
-        self._query_runner(parser, *args, **kwargs)
+        return self._query_runner(parser, *args, **kwargs)
 
     def do_locode_query(self, *args, **kwargs):
         parser = self.code_bank.get_parser(locode.Locode.code_type, distances=False)
-        self._query_runner(parser, *args, **kwargs)
+        return self._query_runner(parser, *args, **kwargs)
 
     def do_state_query(self, *args, **kwargs):
         parser = self.code_bank.get_parser(state.State.code_type, distances=False)
-        self._query_runner(parser, *args, **kwargs)
+        return self._query_runner(parser, *args, **kwargs)
 
     def do_subdivision_query(self, *args, **kwargs):
         parser = self.code_bank.get_parser(subdivision.SubDivision.code_type, distances=False)
-        self._query_runner(parser, *args, **kwargs)
+        return self._query_runner(parser, *args, **kwargs)
 
     def do_distance(self, code, x, y=None):
         lcde1 = self.code_bank.get(code, locode.Locode.code_type)
@@ -102,15 +125,33 @@ class CommandHandler:
         else:
             self._printer("[COULD NOT CALCULATE]")
 
-    def do_point(self, x, y, box_radius=None):
+        return distance
+
+    def do_point(self, x, y, box_radius=None, subdivisions=False):
         # 111 being about the ratio of Earth degrees to kilometers
-        parser = self.code_bank.get_parser(locode.Locode.code_type)
-        lcde, distance = parser.search(float(x), float(y), float(box_radius) / 111. if box_radius else None, bool(box_radius))
-        if lcde:
-            self._printer("DISTANCE (deg): %.4lf" % distance)
-            self._printer(lcde.paragraph())
+        if subdivisions:
+            parser = self.code_bank.get_parser(subdivision.SubDivision.code_type)
         else:
+            parser = self.code_bank.get_parser(locode.Locode.code_type)
+
+        nearest_only = not bool(box_radius)
+        results = parser.search(float(x), float(y), float(box_radius) / 111. if box_radius else None, nearest_only)
+
+        if nearest_only:
+            results = [results]
+
+        lcde = None
+        for result in results:
+            lcde, distance = result
+
+            if lcde:
+                self._printer("DISTANCE (deg): %.4lf" % distance)
+                self._printer(lcde.paragraph())
+
+        if not lcde:
             self._printer("[NO NEARBY LOCODE]")
+
+        return lcde
 
     def _parse_to_components(self, args):
         components = {'name': []}
@@ -152,6 +193,8 @@ class CommandHandler:
             else:
                 self._printer("[NO MATCH]")
 
+        return lcdes
+
     def do_consistency(self):
         missing = {}
         for lcde in self.code_bank.get_values(locode.Locode.code_type):
@@ -173,6 +216,8 @@ class CommandHandler:
             ste = self.code_bank.get(ste, state.State.code_type)
             self._printer("%s: %s" % (ste.name, ', '.join(['%s (%s)' % (k, ', '.join([w.name for w in v])) for k, v in msg.items()])))
 
+        return missing
+
     def do_match(self, code, *args):
         code_type = None
         if code == '[ST]':
@@ -183,6 +228,7 @@ class CommandHandler:
         lcde = self.code_bank.sget(code, code_type)
         if not lcde:
             self._printer("[NOT FOUND]")
+            score, log_steps = (None, None)
         else:
             components = self._parse_to_components(args)
             parser = self.code_bank.get_parser(code_type, distances=False)
@@ -192,6 +238,8 @@ class CommandHandler:
             content += "\n".join([':'.join(map(str, lg)) for lg in log_steps])
             self._printer(content)
 
+        return lcde, score, log_steps
+
     def do_locode(self, code):
         lcde = self.code_bank.sget(code, locode.Locode.code_type)
         if not lcde:
@@ -199,12 +247,21 @@ class CommandHandler:
         else:
             self._printer(lcde.paragraph())
 
-    def do_subdivision(self, code):
+        return lcde
+
+    def do_subdivision(self, code, children=False):
         subdiv = self.code_bank.sget(code, subdivision.SubDivision.code_type)
         if not subdiv:
             self._printer("[NOT FOUND]")
         else:
             self._printer(subdiv.paragraph())
+
+            if children:
+                self._printer("\n\n[CHILDREN]\n")
+                for child in subdiv.get_children():
+                    self._printer(child.describe())
+
+        return subdiv
 
     def do_state(self, code):
         ste = self.code_bank.sget(code, state.State.code_type)
@@ -212,3 +269,5 @@ class CommandHandler:
             self._printer("[NOT FOUND]")
         else:
             self._printer(ste.paragraph())
+
+        return ste

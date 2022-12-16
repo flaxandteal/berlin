@@ -43,8 +43,8 @@ class TestSubdivision:
     def test_can_create_simple_subdivision(self, subdiv_dict, state_dict):
         key, item = list(subdiv_dict.items())[0]
 
-        state_service = lambda st: state_dict[st]
-        lcde = subdivision.SubDivision(state_service, key, **item)
+        state_service = lambda st, _: state_dict[st]
+        lcde = subdivision.SubDivision(key, code_service=state_service, **item)
 
         assert str(lcde) == key
         assert dict(lcde) == item

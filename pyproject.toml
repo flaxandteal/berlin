@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "berlin"
+version = "0.2.2"
+description = "Tool to help analyse location statistics"
+authors = ["Phil Weir <phil.weir@flaxandteal.co.uk>"]
+license = "AGPLv3"
+packages = [
+    { include = "berlin" },
+    { include = "berlin/scripts" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+click = "^8.0.3"
+pytest-runner = "^5.3.1"
+fuzzywuzzy = "^0.18.0"
+pandas = "^1.3.5"
+tqdm = "4.24"
+appdirs = "^1.4.4"
+setuptools = "^60.5.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+mypy = "^0.931"
+
+[tool.poetry.scripts]
+berliner = "berlin.scripts.berliner:cli"
+
+[build-system]
+requires = ["wheel", "setuptools", "poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

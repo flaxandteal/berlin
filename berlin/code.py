@@ -8,14 +8,18 @@ This file contains a class for representing UN LOCODE related types.
 from fuzzywuzzy import fuzz
 import re
 
+# Should be great circle (esp if not small)
+from math import sqrt
+
 
 class Code:
     """Basic representation of codes"""
 
     _fields = ()
     _intrinsic_fields = ()
+    _fixed_coordinates = None
+    _barycentre = None
     function_score = 0
-    coordinates = None
     code_type = None
 
     @classmethod
@@ -25,6 +29,7 @@ class Code:
     def __init__(self, identifier, **kwargs):
         self.identifier = identifier
         self._definition = identifier
+        self._children = []
 
         if 'code_service' in kwargs:
             self._code_service = kwargs['code_service']
@@ -62,6 +67,15 @@ class Code:
             if value:
                 yield field, self.get(field)
 
+    def get_children(self):
+        return self._children
+
+    def add_child(self, code):
+        self._children.append(code)
+
+        if code.coordinates:
+            self._barycentre = None
+
     def name_score(self, test_name):
         """Get a score for the matching of a name."""
 
@@ -97,6 +111,10 @@ class Code:
         """Returns a definition-type string."""
         return self._definition
 
+    def distance(self, x, y):
+        if self.coordinates:
+            return sqrt((x - self.coordinates[0]) ** 2 + (y - self.coordinates[1]) ** 2)
+
     def paragraph(self):
         """Print a paragraph version of information about this code."""
         content = "%s\n[DE] %s\n[DF] %s\n" % (str(self), self.describe(), self.definition())
@@ -106,6 +124,12 @@ class Code:
                 content += "\n%s: %s" % (field.upper(), value)
 
         content += "\nALTERNATIVE NAMES: [%s]" % "] [".join(self.alternative_names)
+
+        if self.coordinates:
+            content += "'\n{%.4lf, %.4lf}\n" % tuple(self.coordinates)
+
+        if self._children:
+            content += f"\n[Children: {len(self._children)}]\n"
 
         return content
 
@@ -124,3 +148,17 @@ class Code:
         if 'code_service':
             kw['code_service'] = code_service
         return cls(jsn['i'], **kw)
+
+    @property
+    def coordinates(self):
+        if self._fixed_coordinates:
+            return self._fixed_coordinates
+
+        if not self._barycentre:
+            child_coords = [child.coordinates for child in self._children if child.coordinates]
+            if child_coords:
+                x = sum([cc[0] for cc in child_coords]) / len(child_coords)
+                y = sum([cc[1] for cc in child_coords]) / len(child_coords)
+                self._barycentre = (x, y)
+
+        return self._barycentre
